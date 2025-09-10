@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,10 +11,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ui/prompt-input";
 import { PromptSuggestion } from "@/components/ui/prompt-suggestion";
-import {
-  Message,
-  MessageAvatar,
-} from "@/components/ui/message";
+import { Message, MessageAvatar } from "@/components/ui/message";
 import { Loader } from "@/components/ui/loader";
 import { ResponseStream } from "@/components/ui/response-stream";
 import { Button } from "@/components/ui/button";
@@ -36,6 +33,18 @@ export default function Dashboard() {
   const [isAnalyzingDomains, setIsAnalyzingDomains] = useState(false);
   const [showDomainAnalysis, setShowDomainAnalysis] = useState(false);
   const { sendMessage, loading, error } = useAssistant();
+
+  // Ref for auto-scrolling
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]); // Scroll when messages change or loading state changes
 
   const handleSubmit = async () => {
     if (!input.trim() || loading) return;
@@ -81,10 +90,10 @@ export default function Dashboard() {
     setShowDomainAnalysis(true);
 
     try {
-      const response = await fetch('/api/analyze-domains', {
-        method: 'POST',
+      const response = await fetch("/api/analyze-domains", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ domains }),
       });
@@ -98,7 +107,7 @@ export default function Dashboard() {
       if (result.success) {
         setDomainAnalysisResults(result.analysis);
       } else {
-        throw new Error(result.error || 'Analysis failed');
+        throw new Error(result.error || "Analysis failed");
       }
     } catch (err) {
       console.error("Domain analysis error:", err);
@@ -223,8 +232,10 @@ export default function Dashboard() {
                   disabled={isAnalyzingDomains}
                   className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full border border-cyan-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/30 backdrop-blur-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Brain className={`h-4 w-4 ${isAnalyzingDomains ? 'animate-pulse' : ''}`} />
-                  {isAnalyzingDomains ? 'Analyzing...' : 'Analyze Domains'}
+                  <Brain
+                    className={`h-4 w-4 ${isAnalyzingDomains ? "animate-pulse" : ""}`}
+                  />
+                  {isAnalyzingDomains ? "Analyzing..." : "Analyze Domains"}
                 </button>
               </div>
             </div>
@@ -357,6 +368,8 @@ export default function Dashboard() {
                     </div>
                   </Message>
                 )}
+                {/* Auto-scroll target */}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 

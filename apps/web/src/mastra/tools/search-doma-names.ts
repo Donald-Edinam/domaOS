@@ -5,10 +5,16 @@ const DOMA_GRAPHQL_ENDPOINT = "https://api-testnet.doma.xyz/graphql";
 
 // Helper function to make GraphQL requests
 async function domaGraphQL(query: string, variables?: any) {
+  const apiKey = process.env.DOMA_API_KEY;
+  if (!apiKey) {
+    throw new Error("DOMA_API_KEY is required but not configured");
+  }
+
   const response = await fetch(DOMA_GRAPHQL_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -28,13 +34,23 @@ async function domaGraphQL(query: string, variables?: any) {
 // Tool to search for tokenized names
 export const searchDomaNames = createTool({
   id: "search-doma-names",
-  description: "Search for tokenized domain names on Doma Protocol with filters",
+  description:
+    "Search for tokenized domain names on Doma Protocol with filters",
   inputSchema: z.object({
     name: z.string().optional().describe("Filter by domain name"),
-    tlds: z.array(z.string()).optional().describe("Filter by TLDs (e.g., ['com', 'io'])"),
+    tlds: z
+      .array(z.string())
+      .optional()
+      .describe("Filter by TLDs (e.g., ['com', 'io'])"),
     ownedBy: z.string().optional().describe("Filter by owner address"),
-    take: z.number().default(10).describe("Number of results to return (max 100)"),
-    skip: z.number().default(0).describe("Number of results to skip for pagination"),
+    take: z
+      .number()
+      .default(10)
+      .describe("Number of results to return (max 100)"),
+    skip: z
+      .number()
+      .default(0)
+      .describe("Number of results to skip for pagination"),
   }),
   outputSchema: z.object({
     names: z.array(z.any()),
@@ -77,7 +93,7 @@ export const searchDomaNames = createTool({
     };
 
     const result = await domaGraphQL(query, variables);
-    
+
     return {
       names: result.names.items,
       totalCount: result.names.totalCount,
@@ -89,9 +105,12 @@ export const searchDomaNames = createTool({
 // Tool to get details about a specific name
 export const getDomaNameDetails = createTool({
   id: "get-doma-name-details",
-  description: "Get detailed information about a specific tokenized domain name",
+  description:
+    "Get detailed information about a specific tokenized domain name",
   inputSchema: z.object({
-    name: z.string().describe("The domain name to look up (e.g., 'example.com')"),
+    name: z
+      .string()
+      .describe("The domain name to look up (e.g., 'example.com')"),
   }),
   outputSchema: z.object({
     name: z.any(),
@@ -150,11 +169,11 @@ export const getDomaNameDetails = createTool({
     `;
 
     const result = await domaGraphQL(query, { name: context.name });
-    
+
     if (!result.name) {
       throw new Error(`Name "${context.name}" not found`);
     }
-    
+
     return { name: result.name };
   },
 });
@@ -211,7 +230,7 @@ export const getDomaListings = createTool({
       tlds: context.tlds,
       sld: context.sld,
     });
-    
+
     return {
       listings: result.listings.items,
       totalCount: result.listings.totalCount,
@@ -226,7 +245,10 @@ export const getDomaOffers = createTool({
   inputSchema: z.object({
     tokenId: z.string().optional().describe("Token ID to get offers for"),
     offeredBy: z.string().optional().describe("Filter by offerer address"),
-    status: z.enum(["ACTIVE", "EXPIRED", "All"]).default("ACTIVE").describe("Filter by offer status"),
+    status: z
+      .enum(["ACTIVE", "EXPIRED", "All"])
+      .default("ACTIVE")
+      .describe("Filter by offer status"),
     take: z.number().default(10).describe("Number of results"),
     skip: z.number().default(0).describe("Skip for pagination"),
   }),
@@ -269,7 +291,7 @@ export const getDomaOffers = createTool({
       skip: context.skip,
       take: context.take,
     });
-    
+
     return {
       offers: result.offers.items,
       totalCount: result.offers.totalCount,
@@ -283,7 +305,10 @@ export const getDomaNameActivities = createTool({
   description: "Get activity history for a specific domain name",
   inputSchema: z.object({
     name: z.string().describe("Domain name to get activities for"),
-    type: z.enum(["TOKENIZED", "CLAIMED", "RENEWED", "DETOKENIZED"]).optional().describe("Filter by activity type"),
+    type: z
+      .enum(["TOKENIZED", "CLAIMED", "RENEWED", "DETOKENIZED"])
+      .optional()
+      .describe("Filter by activity type"),
     take: z.number().default(10).describe("Number of results"),
     skip: z.number().default(0).describe("Skip for pagination"),
   }),
@@ -332,7 +357,7 @@ export const getDomaNameActivities = createTool({
       skip: context.skip,
       take: context.take,
     });
-    
+
     return {
       activities: result.nameActivities.items,
       totalCount: result.nameActivities.totalCount,
@@ -372,7 +397,7 @@ export const getDomaNameStatistics = createTool({
     `;
 
     const result = await domaGraphQL(query, { tokenId: context.tokenId });
-    
+
     return { statistics: result.nameStatistics };
   },
 });

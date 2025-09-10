@@ -3,6 +3,20 @@ import { mastra } from "../../../../mastra";
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Google AI API key is configured
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Google AI API key not configured. Please set GOOGLE_GENERATIVE_AI_API_KEY environment variable.",
+          details:
+            "Get your API key from https://aistudio.google.com/app/apikey",
+        },
+        { status: 500 },
+      );
+    }
+
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return NextResponse.json(
@@ -51,14 +65,9 @@ export async function POST(request: NextRequest) {
         ? messages.map((m) => m.content)
         : (prompt as string);
 
-    // Use maxSteps to allow multiple tool calls if needed
-    // Include memory configuration for conversation persistence
-    const result = await agent.generateVNext(normalized, {
-      maxSteps: 5, // Allow up to 5 sequential tool calls
-      memory: {
-        resource: `user_${userId}`,
-        thread: { id: threadId },
-      },
+    // Simple generate call without memory for testing
+    const result = await agent.generate(normalized, {
+      maxSteps: 3, // Reduced steps for faster testing
     });
 
     return NextResponse.json({
@@ -69,11 +78,30 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Agent error:", error);
+
+    // Provide more specific error messages
+    let errorMessage = "Agent call failed";
+    let errorDetails = error instanceof Error ? error.message : String(error);
+
+    if (errorDetails.includes("Google Generative AI API key")) {
+      errorMessage = "Google AI API key error";
+      errorDetails =
+        "Please check your GOOGLE_GENERATIVE_AI_API_KEY environment variable";
+    } else if (errorDetails.includes("AGENT_STREAM_VNEXT_FAILED")) {
+      errorMessage = "Agent streaming failed";
+      errorDetails =
+        "There may be an issue with the agent configuration or model access";
+    }
+
     return NextResponse.json(
       {
         success: false,
-        error: "Agent call failed",
-        details: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
+        details: errorDetails,
+        troubleshooting: {
+          apiKeySet: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+          domaKeySet: !!process.env.DOMA_API_KEY,
+        },
       },
       { status: 500 },
     );
