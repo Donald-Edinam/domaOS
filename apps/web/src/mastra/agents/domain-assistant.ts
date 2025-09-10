@@ -32,7 +32,9 @@ export const domainAssistant = new Agent({
   - Market statistics (active offers, highest offer, etc.)
 
   Always provide accurate, up-to-date information from the Doma Protocol testnet.`,
-  model: google("gemini-1.5-flash"),
+  model: google("gemini-1.5-flash", {
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  }),
   tools: {
     searchDomaNames,
     getDomaNameDetails,

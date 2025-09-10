@@ -14,13 +14,13 @@ import { PromptSuggestion } from "@/components/ui/prompt-suggestion";
 import {
   Message,
   MessageAvatar,
-  MessageContent,
 } from "@/components/ui/message";
 import { Loader } from "@/components/ui/loader";
 import { ResponseStream } from "@/components/ui/response-stream";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Bot } from "lucide-react";
+import { ArrowUp, Bot, Heart, Brain } from "lucide-react";
 import { useAssistant } from "../../hooks/useAssistant";
+import { DomainAnalysis } from "@/components/domain-analysis";
 
 type MessageType = {
   role: "user" | "assistant";
@@ -32,6 +32,9 @@ export default function Dashboard() {
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<MessageType[]>([]);
+  const [domainAnalysisResults, setDomainAnalysisResults] = useState<any[]>([]);
+  const [isAnalyzingDomains, setIsAnalyzingDomains] = useState(false);
+  const [showDomainAnalysis, setShowDomainAnalysis] = useState(false);
   const { sendMessage, loading, error } = useAssistant();
 
   const handleSubmit = async () => {
@@ -59,12 +62,64 @@ export default function Dashboard() {
     }
   };
 
+  const handleDomainAnalysis = async () => {
+    // Extract potential domains from the input or use example domains
+    const domains = input.trim()
+      ? extractDomainsFromText(input)
+      : [
+          "techstartup.com",
+          "ai-platform.io",
+          "cryptoexchange.net",
+          "webdev123.org",
+        ];
+
+    if (domains.length === 0) {
+      return;
+    }
+
+    setIsAnalyzingDomains(true);
+    setShowDomainAnalysis(true);
+
+    try {
+      const response = await fetch('/api/analyze-domains', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domains }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Analysis failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setDomainAnalysisResults(result.analysis);
+      } else {
+        throw new Error(result.error || 'Analysis failed');
+      }
+    } catch (err) {
+      console.error("Domain analysis error:", err);
+    } finally {
+      setIsAnalyzingDomains(false);
+    }
+  };
+
+  const extractDomainsFromText = (text: string): string[] => {
+    const domainRegex =
+      /[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.([a-zA-Z]{2,})/g;
+    const matches = text.match(domainRegex);
+    return matches ? [...new Set(matches)] : [];
+  };
+
   const suggestions = [
-    "Search for domain names",
-    "Check domain statistics",
-    "View marketplace listings",
     "Analyze domain trends",
-    "Get domain details",
+    "Search domains",
+    "Check statistics",
+    "View listings",
+    "Get insights",
   ];
 
   const userName = user?.firstName || user?.fullName || "User";
@@ -77,76 +132,157 @@ export default function Dashboard() {
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-gray-50gray-50 sticky top-0 z-40">
+      {/* Header matching sidebar */}
+      <header
+        className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 sticky top-0 z-40"
+        style={{ backgroundColor: "#F4F4F5" }}
+      >
         <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <h1 className="text-xl font-bold text-black ml-2">Doma Agent</h1>
+          <SidebarTrigger className="-ml-1 text-cyan-600 hover:text-cyan-700 transition-colors duration-200" />
+          <h1 className="text-xl font-bold text-cyan-600 ml-2">Doma Agent</h1>
         </div>
       </header>
 
       <div className="flex flex-1 flex-col h-[calc(100vh-4rem)]">
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white">
-            {/* Welcome Section */}
-            <div className="text-center mb-8">
-              <div className="mb-6 flex justify-center">
-                <Avatar className="h-20 w-20 border-2 border-gray-200">
-                  <AvatarImage src={userAvatar} alt={userName} />
-                  <AvatarFallback className="bg-black text-white text-xl font-bold">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
+          /* Modern Landing Page Design */
+          <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gray-900">
+            {/* Gradient overlay starting from middle */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, transparent 0%, transparent 40%, #1e3a8a 60%, #0891b2 80%, #06b6d4 100%)",
+              }}
+            ></div>
+
+            {/* Glowing orb background effect */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="w-96 h-96 rounded-full opacity-20"
+                style={{
+                  background:
+                    "radial-gradient(circle, #06b6d4 0%, #0891b2 30%, transparent 70%)",
+                  filter: "blur(40px)",
+                }}
+              ></div>
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 text-center mb-12 max-w-4xl">
+              {/* Main ORB Logo */}
+              <div className="mb-8 flex justify-center">
+                <div className="relative">
+                  <div
+                    className="h-32 w-32 rounded-full overflow-hidden shadow-2xl border-2 border-cyan-300/30"
+                    style={{
+                      boxShadow:
+                        "0 0 60px rgba(6, 182, 212, 0.4), 0 0 120px rgba(6, 182, 212, 0.2)",
+                    }}
+                  >
+                    <img
+                      src="/orbf.png"
+                      alt="ORB"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Glowing ring animation */}
+                  <div
+                    className="absolute inset-0 rounded-full border-2 border-cyan-300/50 animate-pulse"
+                    style={{
+                      boxShadow: "0 0 20px rgba(6, 182, 212, 0.6)",
+                    }}
+                  ></div>
+                </div>
               </div>
-              <h2 className="text-4xl font-bold text-black mb-4">
-                Welcome, {userName}
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed mb-8">
-                Ask me anything about domain analysis, trading insights, or
-                market trends.
+
+              {/* Headlines */}
+              <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 leading-tight">
+                Chat with DomaOs
+                <Heart className="inline-block w-8 h-8 ml-3 text-cyan-300 animate-pulse" />
+              </h1>
+
+              <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed">
+                AI-powered domain intelligence at your fingertips
               </p>
 
-              {/* Suggestions */}
-              <div className="flex flex-wrap gap-2 justify-center mb-8">
+              {/* Futuristic suggestion chips */}
+              <div className="flex flex-wrap gap-3 justify-center mb-12">
                 {suggestions.map((suggestion, index) => (
-                  <PromptSuggestion
+                  <button
                     key={index}
                     onClick={() => setInput(suggestion)}
+                    className="px-6 py-3 bg-gray-800/60 hover:bg-gray-700/80 text-cyan-300 rounded-full border border-cyan-300/30 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-300/20 backdrop-blur-sm"
                   >
                     {suggestion}
-                  </PromptSuggestion>
+                  </button>
                 ))}
+                {/* Domain Analysis Button */}
+                <button
+                  onClick={handleDomainAnalysis}
+                  disabled={isAnalyzingDomains}
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full border border-cyan-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/30 backdrop-blur-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Brain className={`h-4 w-4 ${isAnalyzingDomains ? 'animate-pulse' : ''}`} />
+                  {isAnalyzingDomains ? 'Analyzing...' : 'Analyze Domains'}
+                </button>
               </div>
             </div>
 
-            {/* Prompt Input */}
-            <div className="w-full max-w-4xl">
-              <PromptInput
-                value={input}
-                onValueChange={setInput}
-                onSubmit={handleSubmit}
-                isLoading={loading}
-                className="border border-gray-200 rounded-2xl bg-white shadow-lg"
+            {/* Restored PromptInput */}
+            <div className="relative z-10 w-full max-w-4xl">
+              <div
+                className="bg-gray-800/80 backdrop-blur-md rounded-2xl border border-gray-700/50 shadow-2xl focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/30 transition-all duration-200"
+                style={{
+                  boxShadow:
+                    "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(6, 182, 212, 0.1)",
+                }}
               >
-                <PromptInputTextarea
-                  placeholder="Type your message here..."
-                  className="min-h-[60px] text-base text-black border border-gray-200 rounded-lg"
-                />
-                <PromptInputActions className="justify-end pt-2">
-                  <Button
-                    size="sm"
-                    className="h-10 w-10 rounded-full bg-black hover:bg-gray-800"
-                    onClick={handleSubmit}
-                    disabled={loading || !input.trim()}
-                  >
-                    <ArrowUp className="h-4 w-4 text-white" />
-                  </Button>
-                </PromptInputActions>
-              </PromptInput>
+                <PromptInput
+                  value={input}
+                  onValueChange={setInput}
+                  onSubmit={handleSubmit}
+                  isLoading={loading}
+                >
+                  <PromptInputTextarea
+                    placeholder="Ask me anything about domains..."
+                    className="min-h-[60px] text-lg text-white placeholder-gray-400 bg-transparent border-0"
+                  />
+                  <PromptInputActions className="justify-end pt-2">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={loading || !input.trim()}
+                      className="bg-cyan-600 hover:bg-cyan-700 text-white h-12 w-12 rounded-2xl shadow-lg hover:shadow-cyan-500/30 transition-all duration-200 border-2 border-cyan-800"
+                    >
+                      <ArrowUp className="h-5 w-5" />
+                    </Button>
+                  </PromptInputActions>
+                </PromptInput>
+              </div>
             </div>
+
+            {/* Domain Analysis Results */}
+            {showDomainAnalysis && (
+              <div className="relative z-10 w-full max-w-6xl mt-8">
+                <DomainAnalysis
+                  results={domainAnalysisResults}
+                  isAnalyzing={isAnalyzingDomains}
+                  onClose={() => setShowDomainAnalysis(false)}
+                />
+              </div>
+            )}
           </div>
         ) : (
-          /* Chat Messages View */
-          <div className="flex-1 flex flex-col bg-white">
+          /* Chat Messages View with Dark Theme */
+          <div className="flex-1 flex flex-col bg-gray-900 relative">
+            {/* Gradient overlay starting from middle */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(180deg, transparent 0%, transparent 40%, #1e3a8a 60%, #0891b2 80%, #06b6d4 100%)",
+              }}
+            ></div>
             <ScrollArea className="flex-1 p-6">
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((message) => (
@@ -158,18 +294,19 @@ export default function Dashboard() {
                   >
                     {message.role === "assistant" && (
                       <MessageAvatar
-                        src="/ai-avatar.png"
-                        alt="AI Assistant"
-                        fallback="AI"
+                        src="/orbf.png"
+                        alt="ORB Assistant"
+                        fallback="ORB"
+                        className="ring-2 ring-cyan-300/30"
                       />
                     )}
 
-                    <MessageContent
-                      className={`max-w-[85%] ${
+                    <div
+                      className={`max-w-[85%] rounded-lg p-2 text-foreground bg-secondary prose break-words whitespace-normal ${
                         message.role === "user"
-                          ? "bg-black text-white"
-                          : "bg-gray-50 text-black"
-                      }`}
+                          ? "bg-cyan-500 text-black"
+                          : "bg-gray-800/80 text-white border border-gray-700/50 backdrop-blur-sm"
+                      } shadow-lg`}
                     >
                       {message.role === "assistant" ? (
                         <ResponseStream
@@ -180,13 +317,14 @@ export default function Dashboard() {
                       ) : (
                         message.content
                       )}
-                    </MessageContent>
+                    </div>
 
                     {message.role === "user" && (
                       <MessageAvatar
                         src={userAvatar}
                         alt={userName}
                         fallback={userInitials}
+                        className="ring-2 ring-cyan-300/30"
                       />
                     )}
                   </Message>
@@ -195,57 +333,81 @@ export default function Dashboard() {
                 {loading && (
                   <Message className="justify-start">
                     <MessageAvatar
-                      src="/ai-avatar.png"
-                      alt="AI Assistant"
-                      fallback="AI"
+                      src="/orbf.png"
+                      alt="ORB Assistant"
+                      fallback="ORB"
+                      className="ring-2 ring-cyan-300/30"
                     />
-                    <MessageContent className="bg-gray-50">
+                    <div className="rounded-lg p-2 text-foreground bg-secondary prose break-words whitespace-normal bg-gray-800/80 text-white border border-gray-700/50 backdrop-blur-sm">
                       <Loader variant="typing" />
-                    </MessageContent>
+                    </div>
                   </Message>
                 )}
 
                 {error && (
                   <Message className="justify-start">
                     <MessageAvatar
-                      src="/error-avatar.png"
-                      alt="Error"
+                      src="/orbf.png"
+                      alt="ORB Assistant"
                       fallback="!"
+                      className="ring-2 ring-red-300/30"
                     />
-                    <MessageContent className="bg-red-50 text-red-600">
+                    <div className="rounded-lg p-2 text-foreground bg-secondary prose break-words whitespace-normal bg-red-900/80 text-red-100 border border-red-700/50 backdrop-blur-sm">
                       Error: {error}
-                    </MessageContent>
+                    </div>
                   </Message>
                 )}
               </div>
             </ScrollArea>
 
-            {/* Chat Input for Messages View */}
-            <div className="bg-white p-6">
+            {/* Chat Input for Messages View - Restored PromptInput */}
+            <div
+              className="p-6 border-t border-gray-700/30"
+              style={{
+                background:
+                  "linear-gradient(180deg, transparent 0%, #0f172a 100%)",
+              }}
+            >
               <div className="max-w-4xl mx-auto">
-                <PromptInput
-                  value={input}
-                  onValueChange={setInput}
-                  onSubmit={handleSubmit}
-                  isLoading={loading}
-                  className="border border-gray-200 rounded-2xl bg-white"
+                <div
+                  className="bg-gray-800/80 backdrop-blur-md rounded-2xl border border-gray-700/50 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-400/30 transition-all duration-200"
+                  style={{
+                    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.4)",
+                  }}
                 >
-                  <PromptInputTextarea
-                    placeholder="Continue the conversation..."
-                    className="min-h-[50px] text-black border border-gray-200 rounded-lg"
-                  />
-                  <PromptInputActions className="justify-end pt-2">
-                    <Button
-                      size="sm"
-                      className="h-10 w-10 rounded-full bg-black hover:bg-gray-800"
-                      onClick={handleSubmit}
-                      disabled={loading || !input.trim()}
-                    >
-                      <ArrowUp className="h-4 w-4 text-white" />
-                    </Button>
-                  </PromptInputActions>
-                </PromptInput>
+                  <PromptInput
+                    value={input}
+                    onValueChange={setInput}
+                    onSubmit={handleSubmit}
+                    isLoading={loading}
+                  >
+                    <PromptInputTextarea
+                      placeholder="Continue the conversation..."
+                      className="min-h-[50px] text-white placeholder-gray-400 bg-transparent border-0"
+                    />
+                    <PromptInputActions className="justify-end pt-2">
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={loading || !input.trim()}
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white h-10 w-10 rounded-2xl shadow-lg hover:shadow-cyan-500/30 transition-all duration-200 border-2 border-cyan-800"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                    </PromptInputActions>
+                  </PromptInput>
+                </div>
               </div>
+
+              {/* Domain Analysis in Chat View */}
+              {showDomainAnalysis && (
+                <div className="max-w-4xl mx-auto mt-6">
+                  <DomainAnalysis
+                    results={domainAnalysisResults}
+                    isAnalyzing={isAnalyzingDomains}
+                    onClose={() => setShowDomainAnalysis(false)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
