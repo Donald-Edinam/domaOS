@@ -137,38 +137,47 @@ body {
     background-color: var(--sidebar);
     color: var(--sidebar-foreground);
   }
-  
+
   /* Uniform icon coloring - more specific selectors */
   .lucide {
     color: #cccccc;
     stroke: currentColor;
   }
-  
+
   /* Icons in sidebar menu buttons */
   [data-sidebar="menu-button"] .lucide {
     color: #cccccc;
   }
-  
+
   /* Icons in primary elements */
   .bg-sidebar-primary .lucide {
     color: #000000;
   }
-  
+
   /* Button styling - only for actual buttons, not sidebar components */
   button:not([data-sidebar]):not([data-slot]) {
     background-color: #ffffff;
     color: #000000;
     border: 1px solid #3c3c3c;
   }
-  
+
   button:not([data-sidebar]):not([data-slot]):hover {
     background-color: #f0f0f0;
     color: #000000;
   }
-  
+
   /* Avatar fallback styling */
   .avatar-fallback {
     background-color: #007acc;
     color: #ffffff;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

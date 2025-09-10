@@ -7,30 +7,38 @@ export async function POST(request: NextRequest) {
     if (!contentType.includes("application/json")) {
       return NextResponse.json(
         { success: false, error: "Content-Type must be application/json" },
-        { status: 415 }
+        { status: 415 },
       );
     }
 
-    const body = await request.json().catch(() => null) as {
+    const body = (await request.json().catch(() => null)) as {
       prompt?: string;
-      messages?: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+      messages?: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }>;
       userId?: string;
       threadId?: string;
     } | null;
-    
+
     if (!body) {
       return NextResponse.json(
         { success: false, error: "Invalid JSON body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { prompt, messages, userId = "default-user", threadId = "default-thread" } = body;
+    const {
+      prompt,
+      messages,
+      userId = "default-user",
+      threadId = "default-thread",
+    } = body;
 
     if (!prompt && (!messages || messages.length === 0)) {
       return NextResponse.json(
         { success: false, error: "Provide 'prompt' or 'messages' in body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Use maxSteps to allow multiple tool calls if needed
     // Include memory configuration for conversation persistence
-    const result = await agent.generate(normalized, {
+    const result = await agent.generateVNext(normalized, {
       maxSteps: 5, // Allow up to 5 sequential tool calls
       memory: {
         resource: `user_${userId}`,
@@ -67,7 +75,7 @@ export async function POST(request: NextRequest) {
         error: "Agent call failed",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
