@@ -19,8 +19,8 @@ export default function DashboardLayout({
   // Show loading while user data is being fetched
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#1e1e1e] text-[#d4d4d4]">
+        <div className="text-sm">Loading...</div>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export default function DashboardLayout({
   // Show sign-in button if user is not authenticated
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#1e1e1e] text-[#d4d4d4]">
         <SignInButton />
       </div>
     );
@@ -36,11 +36,13 @@ export default function DashboardLayout({
 
   // User is authenticated, show the dashboard with sidebar
   return (
-    <SidebarProvider defaultOpen={true}>
-      <AppSidebar />
-      <SidebarInset className="w-full">
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="min-h-screen bg-[#1e1e1e] text-[#d4d4d4]">
+      <SidebarProvider defaultOpen={true}>
+        <AppSidebar />
+        <SidebarInset className="w-full bg-[#1e1e1e]">
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   );
 }

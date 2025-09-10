@@ -16,8 +16,8 @@ export default function Providers({
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="dark"
+      enableSystem={false}
       disableTransitionOnChange
     >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
