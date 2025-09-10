@@ -13,7 +13,6 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as dataIngestion from "../dataIngestion.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as privateData from "../privateData.js";
 import type * as scoring from "../scoring.js";
@@ -29,7 +28,6 @@ import type * as todos from "../todos.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  dataIngestion: typeof dataIngestion;
   healthCheck: typeof healthCheck;
   privateData: typeof privateData;
   scoring: typeof scoring;

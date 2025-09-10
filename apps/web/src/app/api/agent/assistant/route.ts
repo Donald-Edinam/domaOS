@@ -65,9 +65,13 @@ export async function POST(request: NextRequest) {
         ? messages.map((m) => m.content)
         : (prompt as string);
 
-    // Simple generate call without memory for testing
-    const result = await agent.generate(normalized, {
-      maxSteps: 3, // Reduced steps for faster testing
+    // Use generateVNext for V2 model support
+    const result = await agent.generateVNext(normalized, {
+      maxSteps: 3,
+      memory: {
+        thread: threadId,
+        resource: `user_${userId}`,
+      },
     });
 
     return NextResponse.json({

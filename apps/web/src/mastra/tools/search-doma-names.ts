@@ -14,7 +14,7 @@ async function domaGraphQL(query: string, variables?: any) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      "Api-Key": apiKey,
     },
     body: JSON.stringify({ query, variables }),
   });

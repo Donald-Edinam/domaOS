@@ -109,30 +109,102 @@ export const orderbookApiTool = createTool({
             };
           }
 
-          // Simulate domain availability check (replace with actual API when available)
-          const isAvailable = Math.random() > 0.3; // 70% chance available
-          const lastSalePrice = Math.floor(Math.random() * 50000) + 1000;
-          const currentListings = Math.floor(Math.random() * 5);
-          const offers = Math.floor(Math.random() * 8);
+          try {
+            // Use DOMA GraphQL API to check real domain data
+            const graphqlQuery = `
+              query GetDomainInfo($name: String!) {
+                name(name: $name) {
+                  name
+                  expiresAt
+                  tokenizedAt
+                  claimedBy
+                  tokens {
+                    tokenId
+                    networkId
+                    ownerAddress
+                    listings {
+                      id
+                      price
+                      currency {
+                        symbol
+                        decimals
+                      }
+                    }
+                  }
+                }
+                offers(tokenId: null, skip: 0, take: 10) {
+                  totalCount
+                }
+                listings(sld: $name, skip: 0, take: 10) {
+                  totalCount
+                }
+              }
+            `;
 
-          return {
-            success: true,
-            data: {
-              domain,
-              available: isAvailable,
-              currentListings,
-              offers,
-              lastSalePrice: isAvailable ? null : `$${lastSalePrice}`,
-              estimatedValue: `$${Math.floor(lastSalePrice * 0.8)} - $${Math.floor(lastSalePrice * 1.2)}`,
-              marketActivity:
-                currentListings + offers > 5
-                  ? "high"
-                  : currentListings + offers > 2
-                    ? "medium"
-                    : "low",
-            },
-            message: `Domain ${domain} ${isAvailable ? "appears to be available" : "is currently registered"}`,
-          };
+            const graphqlResponse = await fetch(`${apiBaseUrl}/graphql`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Api-Key': process.env.DOMA_API_KEY || '',
+              },
+              body: JSON.stringify({
+                query: graphqlQuery,
+                variables: { name: domain }
+              }),
+            });
+
+            if (!graphqlResponse.ok) {
+              return {
+                success: false,
+                data: null,
+                message: `Failed to check domain: ${graphqlResponse.statusText}`,
+              };
+            }
+
+            const data = await graphqlResponse.json();
+            const domainData = data.data?.name;
+            const isAvailable = !domainData;
+            const listings = data.data?.listings?.totalCount || 0;
+            const offers = data.data?.offers?.totalCount || 0;
+
+            let lastSalePrice = null;
+            let estimatedValue = "Not available";
+
+            if (domainData && domainData.tokens?.length > 0) {
+              const activeListings = domainData.tokens.flatMap(token => token.listings || []);
+              if (activeListings.length > 0) {
+                const prices = activeListings.map(listing =>
+                  parseFloat(listing.price) / Math.pow(10, listing.currency.decimals)
+                );
+                const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+                lastSalePrice = `$${Math.floor(avgPrice)}`;
+                estimatedValue = `$${Math.floor(avgPrice * 0.8)} - $${Math.floor(avgPrice * 1.2)}`;
+              }
+            }
+
+            return {
+              success: true,
+              data: {
+                domain,
+                available: isAvailable,
+                currentListings: listings,
+                offers: offers,
+                lastSalePrice,
+                estimatedValue,
+                marketActivity: listings + offers > 5 ? "high" : listings + offers > 2 ? "medium" : "low",
+                tokenized: !!domainData?.tokenizedAt,
+                expiresAt: domainData?.expiresAt,
+                ownerAddress: domainData?.tokens?.[0]?.ownerAddress,
+              },
+              message: `Domain ${domain} ${isAvailable ? "is available for registration" : "is currently registered"}`,
+            };
+          } catch (error) {
+            return {
+              success: false,
+              data: null,
+              message: `Error checking domain: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            };
+          }
 
         default:
           return {
