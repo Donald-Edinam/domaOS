@@ -21,7 +21,7 @@ export default function Header() {
                 <span className="text-white font-bold text-sm">D</span>
               </div>
               <span className="font-semibold text-lg text-gray-900 dark:text-white">
-                doma.app
+                DomaOS
               </span>
             </Link>
 

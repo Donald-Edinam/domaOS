@@ -15,7 +15,6 @@
     "@mastra/core": "^0.16.2",
     "@mastra/libsql": "^0.14.0",
     "@mastra/memory": "^0.15.0",
-    "@my-better-t-app/backend": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -46,6 +45,7 @@
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.3.4",
+    "use-stick-to-bottom": "^1.1.1",
     "zod": "^3"
   },
   "devDependencies": {
