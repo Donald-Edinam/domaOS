@@ -3,25 +3,64 @@
 
 // Copy the scoring logic for testing
 const SAAS_KEYWORDS = [
-  "ai", "app", "api", "cloud", "dev", "tech", "software", "platform",
-  "saas", "service", "tool", "tools", "hub", "lab", "labs", "studio",
-  "build", "maker", "create", "data", "analytics", "smart", "auto",
-  "digital", "online", "web", "net", "code", "pay", "shop", "store",
-  "mail", "chat", "social", "connect", "sync", "flow", "stream",
-  "dashboard", "admin", "manage", "track", "monitor", "secure", "pro"
+  "ai",
+  "app",
+  "api",
+  "cloud",
+  "dev",
+  "tech",
+  "software",
+  "platform",
+  "saas",
+  "service",
+  "tool",
+  "tools",
+  "hub",
+  "lab",
+  "labs",
+  "studio",
+  "build",
+  "maker",
+  "create",
+  "data",
+  "analytics",
+  "smart",
+  "auto",
+  "digital",
+  "online",
+  "web",
+  "net",
+  "code",
+  "pay",
+  "shop",
+  "store",
+  "mail",
+  "chat",
+  "social",
+  "connect",
+  "sync",
+  "flow",
+  "stream",
+  "dashboard",
+  "admin",
+  "manage",
+  "track",
+  "monitor",
+  "secure",
+  "pro",
 ];
 
 const TLD_BONUSES = {
-  "ai": 25,
-  "io": 20,
-  "dev": 20,
-  "cloud": 25,
-  "tech": 15,
-  "app": 20,
-  "co": 15,
-  "com": 10,
-  "org": 5,
-  "net": 5
+  ai: 25,
+  io: 20,
+  dev: 20,
+  cloud: 25,
+  tech: 15,
+  app: 20,
+  co: 15,
+  com: 10,
+  org: 5,
+  net: 5,
 };
 
 function calculateDomainScore(domain) {
@@ -47,8 +86,8 @@ function calculateDomainScore(domain) {
 
   // SaaS keyword bonus
   const sldLower = sld.toLowerCase();
-  const containsSaasKeyword = SAAS_KEYWORDS.some(keyword =>
-    sldLower.includes(keyword) || sldLower === keyword
+  const containsSaasKeyword = SAAS_KEYWORDS.some(
+    (keyword) => sldLower.includes(keyword) || sldLower === keyword,
   );
 
   if (containsSaasKeyword) {
@@ -92,18 +131,18 @@ const testDomains = [
   { name: "data-hub.tech", sld: "data-hub", tld: "tech" },
   { name: "example123.net", sld: "example123", tld: "net" },
   { name: "build.cloud", sld: "build", tld: "cloud" },
-  { name: "hello.world", sld: "hello", tld: "world" }
+  { name: "hello.world", sld: "hello", tld: "world" },
 ];
 
 console.log("🔥 Domain Scoring Algorithm Test\n");
 console.log("Format: Domain Name | Score | Breakdown");
-console.log("=" .repeat(60));
+console.log("=".repeat(60));
 
-testDomains.forEach(domain => {
+testDomains.forEach((domain) => {
   const score = calculateDomainScore(domain);
   const sldLower = domain.sld.toLowerCase();
-  const hasSaasKeyword = SAAS_KEYWORDS.some(keyword =>
-    sldLower.includes(keyword) || sldLower === keyword
+  const hasSaasKeyword = SAAS_KEYWORDS.some(
+    (keyword) => sldLower.includes(keyword) || sldLower === keyword,
   );
   const tldBonus = TLD_BONUSES[domain.tld] || 0;
 
@@ -123,16 +162,23 @@ testDomains.forEach(domain => {
   if (!/[-0-9]/.test(domain.sld)) breakdown.push("Clean: +5");
   if (isLikelyDictionaryWord(domain.sld)) breakdown.push("Word: +10");
 
-  const scoreColor = score >= 80 ? "🟢" : score >= 60 ? "🔵" : score >= 40 ? "🟡" : "🔴";
+  const scoreColor =
+    score >= 80 ? "🟢" : score >= 60 ? "🔵" : score >= 40 ? "🟡" : "🔴";
 
-  console.log(`${domain.name.padEnd(25)} | ${scoreColor} ${score.toString().padStart(3)} | ${breakdown.join(", ")}`);
+  console.log(
+    `${domain.name.padEnd(25)} | ${scoreColor} ${score.toString().padStart(3)} | ${breakdown.join(", ")}`,
+  );
 });
 
-console.log("\n" + "=" .repeat(60));
-console.log("Legend: 🟢 Premium (80+) | 🔵 Good (60+) | 🟡 Fair (40+) | 🔴 Basic (<40)");
+console.log("\n" + "=".repeat(60));
+console.log(
+  "Legend: 🟢 Premium (80+) | 🔵 Good (60+) | 🟡 Fair (40+) | 🔴 Basic (<40)",
+);
 console.log("\nScoring Factors:");
 console.log("• Base Score: 50 points");
 console.log("• Length: 30 (≤3), 20 (4-5), 10 (6-7), 0 (8-10), -10 (>10)");
 console.log("• SaaS Keywords: +15 points");
-console.log("• Premium TLDs: .ai(+25), .cloud(+25), .io(+20), .dev(+20), .app(+20)");
+console.log(
+  "• Premium TLDs: .ai(+25), .cloud(+25), .io(+20), .dev(+20), .app(+20)",
+);
 console.log("• Quality: +5 (no hyphens/numbers), +10 (dictionary word)");

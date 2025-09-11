@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { useChatHistory, type ChatSession } from "@/hooks/useChatHistory";
+import { DomaScrollbars } from "@/components/ui/overlay-scrollbars";
 
 // Conversation history grouped by time periods
 const groupConversationsByPeriod = (sessions: ChatSession[]) => {
@@ -117,7 +118,7 @@ export function AppSidebar({
     <Sidebar {...props}>
       <SidebarHeader className="flex flex-row items-center justify-between gap-2 px-2 py-4 bg-cyan-500">
         <div className="flex flex-row items-center gap-2 px-2">
-          <div className="bg-white/20 size-8 rounded-md"></div>
+          <img src="/orbf.png" alt="DomaOS" className="size-8 rounded-md" />
           <div className="text-md font-base text-white tracking-tight">
             DomaOS
           </div>
@@ -128,29 +129,37 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent className="pt-4">
-        <div className="px-4">
-          <Button
-            onClick={handleNewChat}
-            variant="outline"
-            className="mb-4 flex w-full items-center gap-2"
-          >
-            <PlusIcon className="size-4" />
-            <span>New Chat</span>
-          </Button>
-        </div>
-
-        {renderConversationGroup("Today", conversationGroups.today)}
-        {renderConversationGroup("Yesterday", conversationGroups.yesterday)}
-        {renderConversationGroup("Last 7 days", conversationGroups.lastWeek)}
-        {renderConversationGroup("Last month", conversationGroups.lastMonth)}
-
-        {sessions.length === 0 && (
-          <div className="text-center py-8 px-4">
-            <p className="text-sm text-muted-foreground">
-              No conversations yet
-            </p>
+        <DomaScrollbars
+          className="flex-1"
+          options={{
+            overflow: { x: "hidden", y: "scroll" },
+            scrollbars: { autoHide: "leave", autoHideDelay: 800 },
+          }}
+        >
+          <div className="px-4">
+            <Button
+              onClick={handleNewChat}
+              variant="outline"
+              className="mb-4 flex w-full items-center gap-2"
+            >
+              <PlusIcon className="size-4" />
+              <span>New Chat</span>
+            </Button>
           </div>
-        )}
+
+          {renderConversationGroup("Today", conversationGroups.today)}
+          {renderConversationGroup("Yesterday", conversationGroups.yesterday)}
+          {renderConversationGroup("Last 7 days", conversationGroups.lastWeek)}
+          {renderConversationGroup("Last month", conversationGroups.lastMonth)}
+
+          {sessions.length === 0 && (
+            <div className="text-center py-8 px-4">
+              <p className="text-sm text-muted-foreground">
+                No conversations yet
+              </p>
+            </div>
+          )}
+        </DomaScrollbars>
       </SidebarContent>
 
       <SidebarFooter>

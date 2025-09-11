@@ -12,8 +12,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "my-better-t-app",
-  description: "my-better-t-app",
+  title: "DomaOS",
+  description:
+    "AI-powered domain operating system for intelligent domain management and analysis",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -22,9 +26,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${jetbrainsMono.variable} font-mono antialiased bg-[#1e1e1e] text-[#d4d4d4]`}
+        className={`${jetbrainsMono.variable} font-mono antialiased bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 text-gray-900`}
       >
         <ClerkProvider>
           <Providers>

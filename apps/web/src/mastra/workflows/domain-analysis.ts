@@ -30,71 +30,33 @@ const SUPPORTED_TLDS = {
   services: 65,
   business: 70,
   company: 70,
-  enterprises: 60,
-  group: 60,
   finance: 75,
   bank: 80,
-  insurance: 70,
-  investment: 70,
   legal: 75,
-  lawyer: 75,
-  attorney: 75,
   health: 75,
-  healthcare: 75,
-  medical: 75,
-  clinic: 70,
-  education: 70,
-  university: 70,
-  school: 65,
-  academy: 65,
   store: 80,
   shop: 80,
   market: 75,
-  buy: 70,
-  sale: 65,
-
-  // Creative/Media (Medium value)
-  design: 70,
-  art: 65,
-  gallery: 60,
-  studio: 70,
-  media: 70,
-  news: 75,
-  blog: 65,
-  website: 60,
-  photo: 60,
-  video: 65,
-  music: 65,
-  film: 65,
 
   // Tech/Innovation (Medium-High value)
   cloud: 85,
   digital: 80,
   online: 75,
-  web: 70,
   software: 80,
-  code: 85,
-  data: 80,
-  network: 75,
   crypto: 90,
   blockchain: 90,
 
-  // Geographic ccTLDs (Variable value)
+  // Geographic ccTLDs
   us: 60,
   uk: 70,
   ca: 65,
   au: 65,
   de: 70,
   fr: 65,
-  jp: 65,
-  kr: 60,
-  in: 60,
-  br: 55,
-  mx: 55,
 
   // Default for other TLDs
   default: 40,
-};
+} as const;
 
 // Get TLD score with fallback to default
 function getTLDScore(tld: string): number {
@@ -104,10 +66,11 @@ function getTLDScore(tld: string): number {
   );
 }
 
-// Step to tokenize domain names
+// Enhanced tokenization step
 const tokenizeDomainsStep = createStep({
-  id: "tokenize-domains",
-  description: "Tokenize domain names and analyze their components",
+  id: "tokenize-domains-enhanced",
+  description:
+    "Advanced tokenization of domain names with comprehensive analysis",
   inputSchema: z.object({
     domains: z.array(z.string()),
   }),
@@ -120,6 +83,7 @@ const tokenizeDomainsStep = createStep({
         hasNumbers: z.boolean(),
         hasHyphens: z.boolean(),
         tld: z.string(),
+        tldScore: z.number(),
       }),
     ),
   }),
@@ -132,17 +96,14 @@ const tokenizeDomainsStep = createStep({
       const tld = parts.pop() || "";
       const mainDomain = parts.join(".");
 
-      // Tokenize the main domain
+      // Advanced tokenization
       const tokens = mainDomain
         .toLowerCase()
         .split(/[-_]/) // Split on hyphens and underscores
-        .flatMap(
-          (token) => token.split(/(?=[A-Z])/), // Split on camelCase
-        )
-        .flatMap(
-          (token) => token.split(/(?=\d)|(?<=\d)(?=\D)/), // Split on number boundaries
-        )
-        .filter((token) => token.length > 0);
+        .flatMap((token) => token.split(/(?=[A-Z])/)) // Split on camelCase
+        .flatMap((token) => token.split(/(?=\d)|(?<=\d)(?=\D)/)) // Split on number boundaries
+        .filter((token) => token.length > 0)
+        .map((token) => token.toLowerCase());
 
       return {
         domain,
@@ -151,6 +112,7 @@ const tokenizeDomainsStep = createStep({
         hasNumbers: /\d/.test(mainDomain),
         hasHyphens: /-/.test(mainDomain),
         tld,
+        tldScore: getTLDScore(tld),
       };
     });
 
@@ -158,11 +120,11 @@ const tokenizeDomainsStep = createStep({
   },
 });
 
-// Step to analyze market value and trends
+// Enhanced market analysis step
 const analyzeMarketValueStep = createStep({
-  id: "analyze-market-value",
+  id: "analyze-market-value-enhanced",
   description:
-    "Analyze market value and acquisition potential of tokenized domains",
+    "Advanced market value analysis with comprehensive TLD and keyword scoring",
   inputSchema: z.object({
     tokenizedDomains: z.array(
       z.object({
@@ -172,6 +134,7 @@ const analyzeMarketValueStep = createStep({
         hasNumbers: z.boolean(),
         hasHyphens: z.boolean(),
         tld: z.string(),
+        tldScore: z.number(),
       }),
     ),
   }),
@@ -185,6 +148,11 @@ const analyzeMarketValueStep = createStep({
         reasoning: z.string(),
         keyFactors: z.array(z.string()),
         estimatedValue: z.string(),
+        tldInfo: z.object({
+          tld: z.string(),
+          score: z.number(),
+          tier: z.string(),
+        }),
       }),
     ),
   }),
@@ -195,90 +163,208 @@ const analyzeMarketValueStep = createStep({
       let marketScore = 0;
       const keyFactors = [];
 
-      // Length scoring (shorter is better)
-      if (tokenizedDomain.length <= 6) {
-        marketScore += 30;
-        keyFactors.push("Short length (premium)");
+      // Enhanced length scoring
+      if (tokenizedDomain.length <= 4) {
+        marketScore += 35;
+        keyFactors.push("Ultra-short length (premium)");
+      } else if (tokenizedDomain.length <= 6) {
+        marketScore += 25;
+        keyFactors.push("Short length (highly valuable)");
       } else if (tokenizedDomain.length <= 10) {
-        marketScore += 20;
+        marketScore += 15;
         keyFactors.push("Moderate length");
-      } else {
+      } else if (tokenizedDomain.length <= 15) {
         marketScore += 5;
         keyFactors.push("Long length");
+      } else {
+        marketScore -= 5;
+        keyFactors.push("Very long length (reduces value)");
       }
 
-      // Token analysis
-      const commonWords = [
+      // Advanced keyword analysis
+      const highValueKeywords = [
+        "ai",
+        "crypto",
+        "blockchain",
+        "nft",
+        "web3",
+        "defi",
+        "meta",
+        "vr",
+        "ar",
+        "cloud",
+        "saas",
+        "api",
+      ];
+      const mediumValueKeywords = [
         "app",
         "web",
         "tech",
         "digital",
         "online",
-        "ai",
-        "crypto",
-        "nft",
-        "meta",
+        "mobile",
+        "smart",
+        "pro",
+        "global",
+        "secure",
       ];
-      const hasCommonWords = tokenizedDomain.tokens.some((token) =>
+      const businessKeywords = [
+        "shop",
+        "store",
+        "market",
+        "trade",
+        "pay",
+        "finance",
+        "bank",
+        "invest",
+        "consulting",
+      ];
+
+      const hasHighValue = tokenizedDomain.tokens.some((token) =>
+        highValueKeywords.includes(token.toLowerCase()),
+      );
+      const hasMediumValue = tokenizedDomain.tokens.some((token) =>
+        mediumValueKeywords.includes(token.toLowerCase()),
+      );
+      const hasBusiness = tokenizedDomain.tokens.some((token) =>
+        businessKeywords.includes(token.toLowerCase()),
+      );
+
+      if (hasHighValue) {
+        marketScore += 30;
+        keyFactors.push("Contains high-value tech keywords");
+      } else if (hasMediumValue) {
+        marketScore += 20;
+        keyFactors.push("Contains popular keywords");
+      } else if (hasBusiness) {
+        marketScore += 15;
+        keyFactors.push("Contains business-related keywords");
+      }
+
+      // TLD scoring using comprehensive database
+      const tldContribution = Math.round(tokenizedDomain.tldScore * 0.25);
+      marketScore += tldContribution;
+
+      let tldTier = "standard";
+      if (tokenizedDomain.tldScore >= 90) {
+        tldTier = "premium";
+        keyFactors.push(
+          `${tokenizedDomain.tld.toUpperCase()} TLD (premium tier)`,
+        );
+      } else if (tokenizedDomain.tldScore >= 75) {
+        tldTier = "high-value";
+        keyFactors.push(
+          `${tokenizedDomain.tld.toUpperCase()} TLD (high value)`,
+        );
+      } else if (tokenizedDomain.tldScore >= 60) {
+        tldTier = "good-value";
+        keyFactors.push(
+          `${tokenizedDomain.tld.toUpperCase()} TLD (good value)`,
+        );
+      } else {
+        keyFactors.push(`${tokenizedDomain.tld.toUpperCase()} TLD (standard)`);
+      }
+
+      // Brandability analysis
+      const pronounceableWords = tokenizedDomain.tokens.filter(
+        (token) => token.length >= 3 && !/^\d+$/.test(token),
+      );
+
+      if (
+        pronounceableWords.length <= 2 &&
+        pronounceableWords.every((word) => word.length <= 8)
+      ) {
+        marketScore += 10;
+        keyFactors.push("High brandability (memorable)");
+      }
+
+      // Dictionary words bonus
+      const commonWords = [
+        "home",
+        "house",
+        "car",
+        "food",
+        "game",
+        "news",
+        "book",
+        "music",
+        "video",
+        "photo",
+      ];
+      const hasDictionaryWords = tokenizedDomain.tokens.some((token) =>
         commonWords.includes(token.toLowerCase()),
       );
 
-      if (hasCommonWords) {
-        marketScore += 25;
-        keyFactors.push("Contains trending keywords");
+      if (hasDictionaryWords) {
+        marketScore += 8;
+        keyFactors.push("Contains dictionary words");
       }
 
-      // TLD analysis
-      if (tokenizedDomain.tld === "com") {
-        marketScore += 30;
-        keyFactors.push(".com TLD (premium)");
-      } else if (["net", "org", "io"].includes(tokenizedDomain.tld)) {
-        marketScore += 15;
-        keyFactors.push(`${tokenizedDomain.tld.toUpperCase()} TLD`);
-      } else {
-        marketScore += 5;
-        keyFactors.push(`${tokenizedDomain.tld.toUpperCase()} TLD`);
-      }
-
-      // Penalize numbers and hyphens
+      // Enhanced penalties
       if (tokenizedDomain.hasNumbers) {
-        marketScore -= 10;
-        keyFactors.push("Contains numbers (reduces value)");
+        if (
+          tokenizedDomain.tokens.some((token) =>
+            /^(24|365|24h|7|247)$/i.test(token),
+          )
+        ) {
+          marketScore -= 5;
+          keyFactors.push("Contains business numbers (minor impact)");
+        } else {
+          marketScore -= 12;
+          keyFactors.push("Contains numbers (reduces brandability)");
+        }
       }
 
       if (tokenizedDomain.hasHyphens) {
-        marketScore -= 15;
-        keyFactors.push("Contains hyphens (reduces value)");
+        marketScore -= 18;
+        keyFactors.push("Contains hyphens (significantly reduces value)");
       }
+
+      // SEO potential
+      if (
+        tokenizedDomain.tokens.length <= 3 &&
+        !tokenizedDomain.hasNumbers &&
+        !tokenizedDomain.hasHyphens
+      ) {
+        marketScore += 5;
+        keyFactors.push("Good SEO potential");
+      }
+
+      // Ensure score bounds
+      marketScore = Math.max(0, Math.min(100, marketScore));
 
       // Determine acquisition potential
       let acquisitionPotential: "high" | "medium" | "low";
-      if (marketScore >= 70) {
+      if (marketScore >= 75) {
         acquisitionPotential = "high";
-      } else if (marketScore >= 40) {
+      } else if (marketScore >= 45) {
         acquisitionPotential = "medium";
       } else {
         acquisitionPotential = "low";
       }
 
-      // Generate reasoning
-      const reasoning = `This domain scores ${marketScore}/100 based on length, keyword relevance, TLD quality, and structural factors. ${
+      // Generate comprehensive reasoning
+      const reasoning = `This domain scores ${marketScore}/100 based on comprehensive analysis including length (${tokenizedDomain.length} chars), TLD value (.${tokenizedDomain.tld} - ${tokenizedDomain.tldScore}/100), keyword relevance, brandability, and structural factors. ${
         acquisitionPotential === "high"
-          ? "Excellent acquisition candidate with strong commercial potential."
+          ? "Excellent acquisition candidate with strong commercial potential and high resale value. Recommended for immediate acquisition."
           : acquisitionPotential === "medium"
-            ? "Good acquisition candidate with moderate commercial potential."
-            : "Lower priority acquisition candidate with limited commercial potential."
+            ? "Good acquisition candidate with decent commercial potential and moderate investment risk. Consider for portfolio diversification."
+            : "Lower priority acquisition candidate. May be suitable for specific use cases or long-term speculation with limited budget allocation."
       }`;
 
-      // Estimate value range
+      // Market-based value estimation
       const estimatedValue =
-        marketScore >= 80
-          ? "$10K - $100K+"
-          : marketScore >= 60
-            ? "$1K - $10K"
-            : marketScore >= 40
-              ? "$100 - $1K"
-              : "$10 - $100";
+        marketScore >= 85
+          ? "$50K - $500K+"
+          : marketScore >= 75
+            ? "$10K - $50K"
+            : marketScore >= 60
+              ? "$2K - $10K"
+              : marketScore >= 45
+                ? "$500 - $2K"
+                : marketScore >= 30
+                  ? "$100 - $500"
+                  : "$10 - $100";
 
       return {
         domain: tokenizedDomain.domain,
@@ -288,6 +374,11 @@ const analyzeMarketValueStep = createStep({
         reasoning,
         keyFactors,
         estimatedValue,
+        tldInfo: {
+          tld: tokenizedDomain.tld,
+          score: tokenizedDomain.tldScore,
+          tier: tldTier,
+        },
       };
     });
 
@@ -295,11 +386,11 @@ const analyzeMarketValueStep = createStep({
   },
 });
 
-// Main domain tokenization workflow
+// Enhanced domain tokenization workflow
 export const domainTokenizationWorkflow = createWorkflow({
-  id: "domain-tokenization-analysis",
+  id: "domain-tokenization-analysis-enhanced",
   description:
-    "Analyze domain names through tokenization and market evaluation",
+    "Advanced domain analysis with comprehensive TLD database and market intelligence",
   inputSchema: z.object({
     domains: z.array(z.string()),
   }),
@@ -313,6 +404,11 @@ export const domainTokenizationWorkflow = createWorkflow({
         reasoning: z.string(),
         keyFactors: z.array(z.string()),
         estimatedValue: z.string(),
+        tldInfo: z.object({
+          tld: z.string(),
+          score: z.number(),
+          tier: z.string(),
+        }),
       }),
     ),
   }),

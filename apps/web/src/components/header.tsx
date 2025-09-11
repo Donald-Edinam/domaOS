@@ -13,16 +13,16 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="backdrop-blur-xl bg-purple-100/80 dark:bg-gray-900/80 border border-purple-200/50 dark:border-white/10 rounded-2xl shadow-lg shadow-black/5 dark:shadow-black/20 px-6 py-4">
+        <div className="backdrop-blur-xl bg-cyan-400/90 border border-cyan-300/50 rounded-2xl shadow-lg shadow-black/5 px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">D</span>
-              </div>
-              <span className="font-semibold text-lg text-gray-900 dark:text-white">
-                DomaOS
-              </span>
+              <img
+                src="/orbf.png"
+                alt="DomaOS"
+                className="w-8 h-8 rounded-lg"
+              />
+              <span className="font-semibold text-lg text-white">DomaOS</span>
             </Link>
 
             {/* Navigation */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, memo } from "react";
-import { useAssistant } from "../hooks/useAssistant";
+import { useAssistantWithProgress } from "../hooks/useAssistantWithProgress";
 import { Button } from "./ui/button";
 import { ChatContainerContent, ChatContainerRoot } from "./ui/chat-container";
 import {
@@ -17,7 +17,9 @@ import {
 } from "./ui/prompt-input";
 import { Tool } from "./ui/tool";
 import type { ToolPart } from "./ui/tool";
+import { ToolProgress } from "./ui/tool-progress";
 import { useTextStream } from "./ui/response-stream";
+import { DomaScrollbars } from "./ui/overlay-scrollbars";
 import { cn } from "@/lib/utils";
 import {
   ArrowUp,
@@ -210,7 +212,8 @@ ErrorMessage.displayName = "ErrorMessage";
 // Exact chat implementation as you provided
 export function AssistantChat() {
   const [input, setInput] = useState("");
-  const { sendMessage, loading, error } = useAssistant();
+  const { sendMessage, loading, error, toolSteps, currentStep } =
+    useAssistantWithProgress();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const handleSubmit = () => {
@@ -353,6 +356,18 @@ export function AssistantChat() {
               />
             );
           })}
+
+          {/* Show tool progress when tools are running */}
+          {toolSteps && toolSteps.length > 0 && (
+            <div className="mx-auto w-full max-w-3xl px-2 md:px-10">
+              <ToolProgress
+                steps={toolSteps}
+                currentStep={currentStep}
+                defaultOpen={true}
+                className="mb-4"
+              />
+            </div>
+          )}
 
           {error && <ErrorMessage error={error} />}
         </ChatContainerContent>

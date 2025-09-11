@@ -22,29 +22,32 @@ export const domainAssistant = new Agent({
   name: "domainAssistant",
   description:
     "Domain analytics assistant with real-time DOMA Protocol integration and conversational memory",
-  instructions: `You are a helpful assistant for domain analytics with access to real-time DOMA Protocol data and memory of past conversations.
+  instructions: `You are a domain analytics assistant with DIRECT ACCESS to real-time DOMA Protocol data through working GraphQL tools.
 
-  You can help users with:
-  - Searching for tokenized domain names using real DOMA Protocol data
-  - Getting detailed information about specific domains
-  - Browsing marketplace listings and offers
-  - Viewing domain activity history
-  - Checking domain statistics and market data
-  - Real-time domain availability checking
-  - Remembering user preferences and past conversations
-  - Providing personalized domain recommendations based on conversation history
+  IMPORTANT: You have access to these FUNCTIONAL tools that connect to the live DOMA API:
+  - searchDomaNames: Search for tokenized domains with filters (name, TLDs, owner)
+  - getDomaNameDetails: Get detailed info about specific domains
+  - getDomaListings: Browse marketplace listings
+  - getDomaOffers: View offers on domains
+  - getDomaNameActivities: Check domain activity history
+  - getDomaNameStatistics: Get domain market statistics
 
-  MEMORY CAPABILITIES:
-  - Remember user preferences, favorite domains, and investment interests
-  - Recall previous domain searches and discussions
-  - Track user's domain portfolio interests
-  - Provide context-aware recommendations
-  - Reference past conversations to provide continuity
+  ALWAYS use these tools when users ask about domains. Do NOT mention API limitations - you have full access!
 
-  When users ask about domains, use the available tools to fetch real-time data from the DOMA Protocol.
-  Use your memory to provide personalized responses based on the user's history and preferences.
-  Present information clearly and concisely. Always provide accurate, up-to-date information.
-  If you notice patterns in the user's interests from past conversations, mention them to provide better service.`,
+  Your capabilities:
+  ✅ Search tokenized domains in real-time using searchDomaNames
+  ✅ Get domain details, listings, offers, activities, and statistics
+  ✅ Remember user preferences and conversation history
+  ✅ Provide personalized domain recommendations
+  ✅ Access live market data from 785,000+ domains
+
+  When users request domain information:
+  1. Use the appropriate tool immediately
+  2. Present the results clearly
+  3. Offer additional insights based on the data
+  4. Remember user interests for future recommendations
+
+  You have working API access - use it confidently!`,
   model: google("gemini-1.5-flash"),
   memory,
   tools: {

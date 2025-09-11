@@ -3,32 +3,63 @@ import { z } from "zod";
 
 const DOMA_GRAPHQL_ENDPOINT = "https://api-testnet.doma.xyz/graphql";
 
-// Helper function to make GraphQL requests
-async function domaGraphQL(query: string, variables?: any) {
+// Helper function to make GraphQL requests with enhanced error handling
+async function domaGraphQL(
+  query: string,
+  variables?: any,
+  options?: { timeout?: number; retries?: number },
+) {
   const apiKey = process.env.DOMA_API_KEY;
   if (!apiKey) {
     throw new Error("DOMA_API_KEY is required but not configured");
   }
 
-  const response = await fetch(DOMA_GRAPHQL_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Api-Key": apiKey,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
+  const { timeout = 30000, retries = 3 } = options || {};
 
-  if (!response.ok) {
-    throw new Error(`GraphQL request failed: ${response.statusText}`);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(DOMA_GRAPHQL_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Api-Key": apiKey,
+          "User-Agent": "Mastra-Tool/1.0",
+        },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(
+          `GraphQL request failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+
+      return data.data;
+    } catch (error) {
+      if (attempt === retries) {
+        throw new Error(
+          `GraphQL request failed after ${retries} attempts: ${error.message}`,
+        );
+      }
+
+      // Wait before retrying (exponential backoff)
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000),
+      );
+    }
   }
-
-  const data = await response.json();
-  if (data.errors) {
-    throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
-  }
-
-  return data.data;
 }
 
 // Tool to search for tokenized names
@@ -56,8 +87,9 @@ export const searchDomaNames = createTool({
     names: z.array(z.any()),
     totalCount: z.number(),
     hasMore: z.boolean(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query SearchNames($skip: Int, $take: Int, $name: String, $tlds: [String!], $ownedBy: [AddressCAIP10!]) {
         names(skip: $skip, take: $take, name: $name, tlds: $tlds, ownedBy: $ownedBy) {
@@ -84,21 +116,41 @@ export const searchDomaNames = createTool({
       }
     `;
 
-    const variables = {
-      skip: context.skip,
-      take: context.take,
-      name: context.name,
-      tlds: context.tlds,
-      ownedBy: context.ownedBy ? [context.ownedBy] : undefined,
-    };
+    try {
+      const variables = {
+        skip: context.skip,
+        take: Math.min(context.take, 100), // Enforce max limit
+        name: context.name,
+        tlds: context.tlds,
+        ownedBy: context.ownedBy ? [context.ownedBy] : undefined,
+      };
 
-    const result = await domaGraphQL(query, variables);
+      // Check for abort signal before making request
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    return {
-      names: result.names.items,
-      totalCount: result.names.totalCount,
-      hasMore: result.names.hasNextPage,
-    };
+      const result = await domaGraphQL(query, variables, {
+        timeout: 30000,
+        retries: 3,
+      });
+
+      return {
+        names: result.names.items,
+        totalCount: result.names.totalCount,
+        hasMore: result.names.hasNextPage,
+      };
+    } catch (error) {
+      console.error(`Error in searchDomaNames: ${error.message}`);
+
+      // Return partial results with error info instead of throwing
+      return {
+        names: [],
+        totalCount: 0,
+        hasMore: false,
+        error: error.message,
+      };
+    }
   },
 });
 
@@ -113,9 +165,10 @@ export const getDomaNameDetails = createTool({
       .describe("The domain name to look up (e.g., 'example.com')"),
   }),
   outputSchema: z.object({
-    name: z.any(),
+    name: z.any().optional(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query GetName($name: String!) {
         name(name: $name) {
@@ -168,13 +221,36 @@ export const getDomaNameDetails = createTool({
       }
     `;
 
-    const result = await domaGraphQL(query, { name: context.name });
+    try {
+      // Check for abort signal before making request
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    if (!result.name) {
-      throw new Error(`Name "${context.name}" not found`);
+      const result = await domaGraphQL(
+        query,
+        { name: context.name },
+        {
+          timeout: 30000,
+          retries: 3,
+        },
+      );
+
+      if (!result.name) {
+        return {
+          name: undefined,
+          error: `Name "${context.name}" not found`,
+        };
+      }
+
+      return { name: result.name };
+    } catch (error) {
+      console.error(`Error in getDomaNameDetails: ${error.message}`);
+      return {
+        name: undefined,
+        error: error.message,
+      };
     }
-
-    return { name: result.name };
   },
 });
 
@@ -191,8 +267,9 @@ export const getDomaListings = createTool({
   outputSchema: z.object({
     listings: z.array(z.any()),
     totalCount: z.number(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query GetListings($skip: Float, $take: Float, $tlds: [String!], $sld: String) {
         listings(skip: $skip, take: $take, tlds: $tlds, sld: $sld) {
@@ -224,17 +301,34 @@ export const getDomaListings = createTool({
       }
     `;
 
-    const result = await domaGraphQL(query, {
-      skip: context.skip,
-      take: context.take,
-      tlds: context.tlds,
-      sld: context.sld,
-    });
+    try {
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    return {
-      listings: result.listings.items,
-      totalCount: result.listings.totalCount,
-    };
+      const result = await domaGraphQL(
+        query,
+        {
+          skip: context.skip,
+          take: Math.min(context.take, 100),
+          tlds: context.tlds,
+          sld: context.sld,
+        },
+        { timeout: 30000, retries: 3 },
+      );
+
+      return {
+        listings: result.listings.items,
+        totalCount: result.listings.totalCount,
+      };
+    } catch (error) {
+      console.error(`Error in getDomaListings: ${error.message}`);
+      return {
+        listings: [],
+        totalCount: 0,
+        error: error.message,
+      };
+    }
   },
 });
 
@@ -255,8 +349,9 @@ export const getDomaOffers = createTool({
   outputSchema: z.object({
     offers: z.array(z.any()),
     totalCount: z.number(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query GetOffers($tokenId: String, $offeredBy: [AddressCAIP10!], $status: OfferStatus, $skip: Float, $take: Float) {
         offers(tokenId: $tokenId, offeredBy: $offeredBy, status: $status, skip: $skip, take: $take) {
@@ -284,18 +379,35 @@ export const getDomaOffers = createTool({
       }
     `;
 
-    const result = await domaGraphQL(query, {
-      tokenId: context.tokenId,
-      offeredBy: context.offeredBy ? [context.offeredBy] : undefined,
-      status: context.status,
-      skip: context.skip,
-      take: context.take,
-    });
+    try {
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    return {
-      offers: result.offers.items,
-      totalCount: result.offers.totalCount,
-    };
+      const result = await domaGraphQL(
+        query,
+        {
+          tokenId: context.tokenId,
+          offeredBy: context.offeredBy ? [context.offeredBy] : undefined,
+          status: context.status,
+          skip: context.skip,
+          take: Math.min(context.take, 100),
+        },
+        { timeout: 30000, retries: 3 },
+      );
+
+      return {
+        offers: result.offers.items,
+        totalCount: result.offers.totalCount,
+      };
+    } catch (error) {
+      console.error(`Error in getDomaOffers: ${error.message}`);
+      return {
+        offers: [],
+        totalCount: 0,
+        error: error.message,
+      };
+    }
   },
 });
 
@@ -315,8 +427,9 @@ export const getDomaNameActivities = createTool({
   outputSchema: z.object({
     activities: z.array(z.any()),
     totalCount: z.number(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query GetNameActivities($name: String!, $type: NameActivityType, $skip: Float, $take: Float) {
         nameActivities(name: $name, type: $type, skip: $skip, take: $take) {
@@ -351,17 +464,34 @@ export const getDomaNameActivities = createTool({
       }
     `;
 
-    const result = await domaGraphQL(query, {
-      name: context.name,
-      type: context.type,
-      skip: context.skip,
-      take: context.take,
-    });
+    try {
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    return {
-      activities: result.nameActivities.items,
-      totalCount: result.nameActivities.totalCount,
-    };
+      const result = await domaGraphQL(
+        query,
+        {
+          name: context.name,
+          type: context.type,
+          skip: context.skip,
+          take: Math.min(context.take, 100),
+        },
+        { timeout: 30000, retries: 3 },
+      );
+
+      return {
+        activities: result.nameActivities.items,
+        totalCount: result.nameActivities.totalCount,
+      };
+    } catch (error) {
+      console.error(`Error in getDomaNameActivities: ${error.message}`);
+      return {
+        activities: [],
+        totalCount: 0,
+        error: error.message,
+      };
+    }
   },
 });
 
@@ -373,9 +503,10 @@ export const getDomaNameStatistics = createTool({
     tokenId: z.string().describe("Token ID to get statistics for"),
   }),
   outputSchema: z.object({
-    statistics: z.any(),
+    statistics: z.any().optional(),
+    error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }, { abortSignal }) => {
     const query = `
       query GetNameStatistics($tokenId: String!) {
         nameStatistics(tokenId: $tokenId) {
@@ -396,8 +527,27 @@ export const getDomaNameStatistics = createTool({
       }
     `;
 
-    const result = await domaGraphQL(query, { tokenId: context.tokenId });
+    try {
+      if (abortSignal?.aborted) {
+        throw new Error("Request aborted");
+      }
 
-    return { statistics: result.nameStatistics };
+      const result = await domaGraphQL(
+        query,
+        { tokenId: context.tokenId },
+        {
+          timeout: 30000,
+          retries: 3,
+        },
+      );
+
+      return { statistics: result.nameStatistics };
+    } catch (error) {
+      console.error(`Error in getDomaNameStatistics: ${error.message}`);
+      return {
+        statistics: undefined,
+        error: error.message,
+      };
+    }
   },
 });
