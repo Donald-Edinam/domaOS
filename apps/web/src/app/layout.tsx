@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-// import { JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 import ConditionalHeader from "@/components/conditional-header";
 import { ClerkProvider } from "@clerk/nextjs";
 
-// Temporarily use system font until network issues are resolved
-// const jetbrainsMono = JetBrains_Mono({
-//   variable: "--font-jetbrains-mono",
-//   subsets: ["latin"],
-//   weight: ["400", "500", "600", "700"],
-//   fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
-//   display: "swap",
-// });
+// Using Inter as a modern alternative to TASA Orbiter until the font is available
+// Inter has similar geometric characteristics and excellent readability
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "DomaOS",
@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className="font-mono antialiased bg-gradient-to-b from-cyan-400 via-cyan-500 to-cyan-600 text-gray-900"
+        className={`${inter.variable} font-inter antialiased bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white`}
       >
         <ClerkProvider>
           <Providers>

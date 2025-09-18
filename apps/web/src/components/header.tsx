@@ -13,7 +13,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="backdrop-blur-xl bg-cyan-400/90 border border-cyan-300/50 rounded-2xl shadow-lg shadow-black/5 px-6 py-4">
+        <div className="backdrop-blur-xl bg-gray-900/80 border border-gray-700/50 rounded-2xl shadow-lg shadow-black/20 px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
@@ -22,7 +22,7 @@ export default function Header() {
                 alt="DomaOS"
                 className="w-8 h-8 rounded-lg"
               />
-              <span className="font-semibold text-lg text-white">DomaOS</span>
+              <span className="font-bold text-lg text-white tracking-wide">DomaOS</span>
             </Link>
 
             {/* Navigation */}
@@ -34,8 +34,8 @@ export default function Header() {
                     size="sm"
                     className={
                       pathname === to
-                        ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100"
-                        : ""
+                        ? "bg-white text-black hover:bg-gray-100"
+                        : "text-gray-300 hover:text-white hover:bg-gray-800"
                     }
                   >
                     {label}
@@ -49,7 +49,7 @@ export default function Header() {
               {/* Authentication */}
               <SignedOut>
                 <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                  <Button className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 flex items-center gap-2">
+                  <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white border-0 flex items-center gap-2">
                     <svg
                       width="16"
                       height="16"
@@ -73,7 +73,7 @@ export default function Header() {
                         fill="#EA4335"
                       />
                     </svg>
-                    Sign in with Google
+                    Sign in
                   </Button>
                 </SignInButton>
               </SignedOut>
