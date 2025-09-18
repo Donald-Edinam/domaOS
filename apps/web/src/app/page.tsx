@@ -29,7 +29,6 @@ export default function HomePage() {
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
               Reimagined
             </h2>
-
             <p className="text-lg md:text-xl text-gray-800 max-w-2xl mx-auto mb-12 leading-relaxed">
               Transform your ideas into stunning results with our advanced
               AI-powered domain management platform. Create, edit, and enhance

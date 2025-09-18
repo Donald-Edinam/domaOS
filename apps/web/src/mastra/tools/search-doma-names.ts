@@ -50,7 +50,7 @@ async function domaGraphQL(
     } catch (error) {
       if (attempt === retries) {
         throw new Error(
-          `GraphQL request failed after ${retries} attempts: ${error.message}`,
+          `GraphQL request failed after ${retries} attempts: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
 
@@ -89,7 +89,7 @@ export const searchDomaNames = createTool({
     hasMore: z.boolean(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query SearchNames($skip: Int, $take: Int, $name: String, $tlds: [String!], $ownedBy: [AddressCAIP10!]) {
         names(skip: $skip, take: $take, name: $name, tlds: $tlds, ownedBy: $ownedBy) {
@@ -125,11 +125,6 @@ export const searchDomaNames = createTool({
         ownedBy: context.ownedBy ? [context.ownedBy] : undefined,
       };
 
-      // Check for abort signal before making request
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(query, variables, {
         timeout: 30000,
         retries: 3,
@@ -141,14 +136,14 @@ export const searchDomaNames = createTool({
         hasMore: result.names.hasNextPage,
       };
     } catch (error) {
-      console.error(`Error in searchDomaNames: ${error.message}`);
+      console.error(`Error in searchDomaNames: ${error instanceof Error ? error.message : String(error)}`);
 
       // Return partial results with error info instead of throwing
       return {
         names: [],
         totalCount: 0,
         hasMore: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -168,7 +163,7 @@ export const getDomaNameDetails = createTool({
     name: z.any().optional(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query GetName($name: String!) {
         name(name: $name) {
@@ -222,11 +217,6 @@ export const getDomaNameDetails = createTool({
     `;
 
     try {
-      // Check for abort signal before making request
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(
         query,
         { name: context.name },
@@ -245,10 +235,10 @@ export const getDomaNameDetails = createTool({
 
       return { name: result.name };
     } catch (error) {
-      console.error(`Error in getDomaNameDetails: ${error.message}`);
+      console.error(`Error in getDomaNameDetails: ${error instanceof Error ? error.message : String(error)}`);
       return {
         name: undefined,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -269,7 +259,7 @@ export const getDomaListings = createTool({
     totalCount: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query GetListings($skip: Float, $take: Float, $tlds: [String!], $sld: String) {
         listings(skip: $skip, take: $take, tlds: $tlds, sld: $sld) {
@@ -302,10 +292,6 @@ export const getDomaListings = createTool({
     `;
 
     try {
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(
         query,
         {
@@ -322,11 +308,11 @@ export const getDomaListings = createTool({
         totalCount: result.listings.totalCount,
       };
     } catch (error) {
-      console.error(`Error in getDomaListings: ${error.message}`);
+      console.error(`Error in getDomaListings: ${error instanceof Error ? error.message : String(error)}`);
       return {
         listings: [],
         totalCount: 0,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -351,7 +337,7 @@ export const getDomaOffers = createTool({
     totalCount: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query GetOffers($tokenId: String, $offeredBy: [AddressCAIP10!], $status: OfferStatus, $skip: Float, $take: Float) {
         offers(tokenId: $tokenId, offeredBy: $offeredBy, status: $status, skip: $skip, take: $take) {
@@ -380,10 +366,6 @@ export const getDomaOffers = createTool({
     `;
 
     try {
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(
         query,
         {
@@ -401,11 +383,11 @@ export const getDomaOffers = createTool({
         totalCount: result.offers.totalCount,
       };
     } catch (error) {
-      console.error(`Error in getDomaOffers: ${error.message}`);
+      console.error(`Error in getDomaOffers: ${error instanceof Error ? error.message : String(error)}`);
       return {
         offers: [],
         totalCount: 0,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -429,7 +411,7 @@ export const getDomaNameActivities = createTool({
     totalCount: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query GetNameActivities($name: String!, $type: NameActivityType, $skip: Float, $take: Float) {
         nameActivities(name: $name, type: $type, skip: $skip, take: $take) {
@@ -465,10 +447,6 @@ export const getDomaNameActivities = createTool({
     `;
 
     try {
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(
         query,
         {
@@ -485,11 +463,11 @@ export const getDomaNameActivities = createTool({
         totalCount: result.nameActivities.totalCount,
       };
     } catch (error) {
-      console.error(`Error in getDomaNameActivities: ${error.message}`);
+      console.error(`Error in getDomaNameActivities: ${error instanceof Error ? error.message : String(error)}`);
       return {
         activities: [],
         totalCount: 0,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -506,7 +484,7 @@ export const getDomaNameStatistics = createTool({
     statistics: z.any().optional(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }, { abortSignal }) => {
+  execute: async ({ context }) => {
     const query = `
       query GetNameStatistics($tokenId: String!) {
         nameStatistics(tokenId: $tokenId) {
@@ -528,10 +506,6 @@ export const getDomaNameStatistics = createTool({
     `;
 
     try {
-      if (abortSignal?.aborted) {
-        throw new Error("Request aborted");
-      }
-
       const result = await domaGraphQL(
         query,
         { tokenId: context.tokenId },
@@ -543,10 +517,10 @@ export const getDomaNameStatistics = createTool({
 
       return { statistics: result.nameStatistics };
     } catch (error) {
-      console.error(`Error in getDomaNameStatistics: ${error.message}`);
+      console.error(`Error in getDomaNameStatistics: ${error instanceof Error ? error.message : String(error)}`);
       return {
         statistics: undefined,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
